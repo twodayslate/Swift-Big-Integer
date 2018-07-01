@@ -2512,6 +2512,87 @@ public struct BDouble:
 
 		return self.isNegative() && !limbs.equalTo(0) ? "-" + res : res
 	}
+	
+	public func scientificENotation(precisionAfterDecimalPoint precision: Int, littleE: Bool = true, withSign: Bool = false) -> String {
+		var fullNumber = BInt(0)
+		var curPrecision = max(1, precision)
+		if !self.isZero() {
+			// ensure we actually get some numbers
+			
+			while(fullNumber.isZero()) {
+				let multiplier = [10].exponentiating(curPrecision)
+				let limbs = self.numerator.multiplyingBy(multiplier).divMod(self.denominator).quotient
+				fullNumber = BInt(limbs: limbs)
+				curPrecision = curPrecision * 2
+			}
+		}
+		
+		var fullNumberDescription = fullNumber.description
+		if (curPrecision > fullNumberDescription.count) {
+			fullNumberDescription = String(repeating: "0", count: curPrecision - fullNumberDescription.count) + fullNumberDescription
+		}
+		
+		// get at least some numbers
+		var zeroCount = 0
+		for c in fullNumber.description {
+			if(c == "0") {
+				zeroCount = zeroCount + 1
+			} else {
+				break
+			}
+		}
+		
+		print("Number of prefix zeros", zeroCount, fullNumber.description)
+		
+		var res = self.decimalExpansion(precisionAfterDecimalPoint: curPrecision+1)
+		
+		let decimalPosition = res.index(of: ".")!.encodedOffset // how many numbers to the left of the decimal
+		let rightNums = res.count - decimalPosition - 1
+		print("left", decimalPosition, "right", rightNums)
+		
+		var magnitude = decimalPosition - 1
+		
+		if(decimalPosition >= 1 && !res.hasPrefix("0")) {
+			print("first")
+			res.remove(at: String.Index(encodedOffset: decimalPosition))
+			res.insert(".", at: String.Index(encodedOffset:1))
+		} else {
+			print("second")
+			res.remove(at: String.Index(encodedOffset: decimalPosition))
+			print(res)
+			var removedZeroes = 0
+			while(res.hasPrefix("0")) {
+				removedZeroes = removedZeroes + 1
+				// remove leading zeros
+				// has to be a better way to do this...
+				res.remove(at: String.Index(encodedOffset: 0))
+			}
+			magnitude = -removedZeroes
+			print(res, "remvoedZeroes:", removedZeroes)
+			if(res.count > 0) {
+				res.insert(".", at: String.Index(encodedOffset:1))
+			} else {
+				magnitude = 0
+				res = "0"
+			}
+		}
+		
+		if(res.hasSuffix(".")) {
+			res = res + "0"
+		}
+		
+		res = String(res.prefix(max(1,precision) + 2 + (self.isNegative() ? 1 : 0)))
+		
+		if(littleE) {
+			res = res + "e"
+		} else {
+			res = res + "E"
+		}
+		
+		res = res + (withSign && magnitude >= 0 ? "+" : "") + String(magnitude)
+		
+		return res
+	}
 
 	public var hashValue: Int
 	{

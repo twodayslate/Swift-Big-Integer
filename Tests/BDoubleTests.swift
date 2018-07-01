@@ -95,6 +95,23 @@ class BDoubleTests : XCTestCase {
 		}
 	}
 
+	func testScientificNotation() {
+		let testValues = [
+			("0.0", "0e0", 0),
+			("1.0", "1.0e0", 0),
+			("11.0", "1.1e1", 0),
+			("111.0", "1.1e2", 0),
+			("0.1", "1.0e-1", 0),
+			("0.001", "1.0e-3", 0),
+			("0.00001", "1.0e-5", 0)
+		]
+		
+		for (original, test, precision) in testValues
+		{
+			let result = BDouble(original)!.scientificENotation(precisionAfterDecimalPoint: precision)
+			XCTAssertEqual(result, test)
+		}
+	}
 
 	func testDecimalExpansion()
 	{
